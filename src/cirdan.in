@@ -152,7 +152,7 @@ create_lxc_container() {
   echo "=== [$(date +"%Y-%m-%d %H:%M:%S")] Container creation" >> "$LUNT_LOG_FILE"
   lxc-create -n "$LUNT_NAME" -f "$LUNT_LXC_CONFIG" -t download -B lvm --lvname "cirdan-$LUNT_NAME" --vgname "$VGNAME" -- -d debian -r wheezy -a amd64 >> "$LUNT_LOG_FILE" 2>&1
 
-  (lxc-info -n "$LUNT_NAME" > /dev/null 2>&1) || fail "fail to create lunt 'LUNT_NAME'"
+  (lxc-info -n "$LUNT_NAME" > /dev/null 2>&1) || fail "fail to create lunt '$LUNT_NAME'"
 }
 
 destroy_lunt() {

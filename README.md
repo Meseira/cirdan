@@ -6,12 +6,12 @@ This software is a tool to easily create and manage LXC unprivileged containers.
 Install
 -------
 
-Use the famous triptych `./configure`, `make` and `make install`
+Use the famous triptych `./configure`, `make` and `make install`.
 
 Configure
 ---------
 
-The main configuration file is `cirdan.conf` that is located in `/usr/local/etc/cirdan` by default. Before creating any container, you should tweak it to fit your needs. Please, read the comments to set the variables according to your needs.
+The main configuration file is `cirdan.conf` that is located in `/usr/local/etc/cirdan` by default. Before creating any container, you should really tweak it. Please, read the comments to set the variables according to your needs.
 
 Issues
 ------

@@ -6,7 +6,7 @@ This software is a tool to easily create and manage LXC unprivileged containers.
 Install
 -------
 
-Use the famous triptych `./configure`, `make` and `make install`.
+Use `./autogen` followed by the famous triptych `./configure`, `make` and `make install`.
 
 Configure
 ---------

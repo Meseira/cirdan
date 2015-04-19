@@ -1,0 +1,33 @@
+# Completion script for cirdan
+_cirdan() {
+  local cur prev opts
+
+  cur="${COMP_WORDS[COMP_CWORD]}"
+  prev="${COMP_WORDS[COMP_CWORD-1]}"
+  opts="config create destroy help show version"
+
+  # Complete argument of the basic commands
+  case "${prev}" in
+    create)
+      local active_lunts=$(ls "@localstatedir@/lib/@PACKAGE@")
+      COMPREPLY=($(compgen -W "${active_lunts}" -- ${cur}))
+      return 0
+      ;;
+    destroy)
+      local active_lunts=$(ls "@localstatedir@/lib/@PACKAGE@")
+      COMPREPLY=($(compgen -W "${active_lunts}" -- ${cur}))
+      return 0
+      ;;
+    show)
+      local active_lunts=$(ls "@localstatedir@/lib/@PACKAGE@")
+      COMPREPLY=($(compgen -W "${active_lunts}" -- ${cur}))
+      return 0
+      ;;
+    *)
+      ;;
+  esac
+
+  COMPREPLY=($(compgen -W "${opts}" -- ${cur}))
+  return 0
+}
+complete -F _cirdan cirdan

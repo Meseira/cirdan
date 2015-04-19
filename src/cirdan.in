@@ -1,0 +1,384 @@
+#!/bin/bash
+
+# Cirdan: create and manage LXC unprivileged containers
+
+# Copyright (C) 2015 Xavier Gendre
+
+# This file is part of Cirdan
+
+# Cirdan is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# Cirdan is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with Cirdan. If not, see <http://www.gnu.org/licenses/>.
+
+create_config() {
+  [ -e "$LOND/$LUNT_NAME" ] && fail "$LOND/$LUNT_NAME already exists"
+
+  # IPv4
+  local IP4_NEW="$(get_free_ip4)"
+  [ -z "$IP4_NEW" ] && fail "no IPv4 available"
+
+  # IPv6
+  local IP6_NEW_SUFFIX="$(printf "%02x%02x:%02x%02x" `echo $IP4_NEW | cut -d '.' -f 1-4 --output-delimiter ' '`)"
+
+  # ID map
+  cp /etc/subuid /etc/subuid-
+  local SUBUID_START=$(get_free_id /etc/subuid)
+  echo "root:$SUBUID_START:65536" >> /etc/subuid
+
+  cp /etc/subgid /etc/subgid-
+  local SUBGID_START=$(get_free_id /etc/subgid)
+  echo "root:$SUBGID_START:65536" >> /etc/subgid
+
+  # Target directory and its files
+  mkdir -p "$LOND/$LUNT_NAME"
+
+  mkdir -p "$LOND/$LUNT_NAME/mount/etc"
+  echo "domain $DOMAIN" > "$LOND/$LUNT_NAME/mount/etc/resolv.conf"
+  local NS; for NS in `echo $NAMESERVERS`; do
+    echo "nameserver $NS" >> "$LOND/$LUNT_NAME/mount/etc/resolv.conf"
+  done
+
+  mkdir -p "$LOND/$LUNT_NAME/mount/etc/apt"
+  cat > "$LOND/$LUNT_NAME/mount/etc/apt/sources.list" << EOF
+deb $DEBIAN_MIRROR wheezy main
+deb $DEBIAN_MIRROR wheezy-updates main
+deb http://security.debian.org wheezy/updates main
+EOF
+
+  mkdir -p "$LOND/$LUNT_NAME/mount/etc/sysctl.d"
+  cat > "$LOND/$LUNT_NAME/mount/etc/sysctl.d/local-ipv6.conf" << EOF
+# IPv6 configuration
+
+# No autoconf
+net.ipv6.conf.all.autoconf=0
+net.ipv6.conf.default.autoconf=0
+net.ipv6.conf.eth0.autoconf=0
+
+# No router advertissement
+net.ipv6.conf.all.accept_ra=0
+net.ipv6.conf.default.accept_ra=0
+net.ipv6.conf.eth0.accept_ra=0
+EOF
+
+  # Hook script
+  local SED_SCRIPT="s%[@]cirdan_logfile[@]%$LUNT_LOG_FILE%g"
+  sed -e $SED_SCRIPT < "@sysconfdir@/@PACKAGE@/hook.template" > "$LOND/$LUNT_NAME/hook.sh"
+  chmod 755 "$LOND/$LUNT_NAME/hook.sh"
+
+  # Lunt configuration file
+  cp "@sysconfdir@/@PACKAGE@/lunt.conf" "$LUNT_CONF"
+
+  # Container configuration file
+  cat > "$LUNT_LXC_CONFIG" << EOF
+# Configuration file for LXC container '$LUNT_NAME'
+# Created $(date +"%Y-%m-%d %H:%M:%S")
+
+# ID map
+lxc.id_map = u 0 $SUBUID_START 65536
+lxc.id_map = g 0 $SUBGID_START 65536
+
+# Autostart
+lxc.start.auto = 1
+
+# Network configuration
+lxc.network.type = veth
+lxc.network.flags = up
+lxc.network.link = $INTERFACE
+lxc.network.ipv4 = $IP4_NEW/32 $IP4_BROADCAST
+lxc.network.ipv4.gateway = $IP4_GATEWAY
+lxc.network.ipv6 = $IP6_LOCAL_PREFIX:$IP6_NEW_SUFFIX/128
+lxc.network.ipv6 = $IP6_GLOBAL_PREFIX:$IP6_NEW_SUFFIX/128
+lxc.network.ipv6.gateway = $IP6_GATEWAY
+
+# Mount entries
+lxc.mount.entry = $LOND/$LUNT_NAME/mount/etc/resolv.conf etc/resolv.conf none bind,create=file 0 0
+lxc.mount.entry = $LOND/$LUNT_NAME/mount/etc/apt/sources.list etc/apt/sources.list none bind,create=file 0 0
+lxc.mount.entry = $LOND/$LUNT_NAME/mount/etc/sysctl.d/local-ipv6.conf etc/sysctl.d/local-ipv6.conf none bind,create=file 0 0
+
+# Hooks
+lxc.hook.pre-start = $LOND/$LUNT_NAME/hook.sh
+lxc.hook.post-stop = $LOND/$LUNT_NAME/hook.sh
+EOF
+}
+
+create_lunt() {
+  [ ! -e "$LUNT_LXC_CONFIG" ] && fail "no configuration file for '$LUNT_NAME'"
+
+  lxc-info -n "$LUNT_NAME" > /dev/null 2>&1
+  if [ $? -eq 0 ]; then
+    [ "$(yesno "Lunt '$LUNT_NAME' already exists, overwrite it")" == "N" ] && fail "nothing has been done"
+    destroy_lxc_container "$LUNT_NAME"
+    echo "!!! [$(date +"%Y-%m-%d %H:%M:%S")] Lunt '$LUNT_NAME' recreated" >> "$LUNT_LOG_FILE"
+  fi
+
+  create_lxc_container
+
+  # Post creation operations
+  if [ -f "$LUNT_CONF" ]; then
+    . "$LUNT_CONF"
+    lxc-start -n "$LUNT_NAME" -d
+
+    # Run dpkg-reconfigure
+    local PKG; for PKG in `echo $DPKG_RECONFIGURE`; do
+      lxc-attach -n "$LUNT_NAME" -- dpkg-reconfigure $PKG
+    done
+
+    # Upgrade packages
+    if [ "$UPGRADE_PACKAGES" = "yes" ]; then
+      lxc-attach -n "$LUNT_NAME" -- apt-get update
+      lxc-attach -n "$LUNT_NAME" -- apt-get upgrade -y
+    fi
+
+    # Install packages
+    if [ ! -z "$INSTALL_PACKAGES" ]; then
+      lxc-attach -n "$LUNT_NAME" -- apt-get update
+      local PKG; for PKG in `echo $INSTALL_PACKAGES`; do
+        lxc-attach -n "$LUNT_NAME" -- apt-get install -y $PKG
+      done
+    fi
+  fi
+}
+
+create_lxc_container() {
+  echo "=== [$(date +"%Y-%m-%d %H:%M:%S")] Container creation" >> "$LUNT_LOG_FILE"
+  lxc-create -n "$LUNT_NAME" -f "$LUNT_LXC_CONFIG" -t download -B lvm --lvname "cirdan-$LUNT_NAME" --vgname "$VGNAME" -- -d debian -r wheezy -a amd64 >> "$LUNT_LOG_FILE" 2>&1
+
+  (lxc-info -n "$LUNT_NAME" > /dev/null 2>&1) || fail "fail to create lunt 'LUNT_NAME'"
+}
+
+destroy_lunt() {
+  [ ! -e "$LOND/$LUNT_NAME" ] && fail "$LOND/$LUNT_NAME doesn't exist"
+
+  [ "$(yesno "Destroy '$LUNT_NAME'")" == "N" ] && fail "nothing has been destroyed"
+
+  if [ -e "$LUNT_LXC_CONFIG" ]; then
+    cp /etc/subuid /etc/subuid-
+    local SUBUID_START=$(grep "lxc\.id_map\ =\ u" $LUNT_LXC_CONFIG | cut -d ' ' -f 5)
+    grep -v "root:$SUBUID_START:65536" /etc/subuid- > /etc/subuid
+
+    cp /etc/subgid /etc/subgid-
+    local SUBGID_START=$(grep "lxc\.id_map\ =\ g" $LUNT_LXC_CONFIG | cut -d ' ' -f 5)
+    grep -v "root:$SUBGID_START:65536" /etc/subgid- > /etc/subgid
+  fi
+
+  destroy_lxc_container
+
+  rm -r "$LUNT_LOG_FILE"
+  rm -rf "$LOND/$LUNT_NAME"
+}
+
+destroy_lxc_container() {
+  echo -n "Shutting down '$LUNT_NAME' ... "
+  lxc-stop -n "$LUNT_NAME"  >> "$LUNT_LOG_FILE" 2>&1
+  echo ""
+  sleep 1
+  echo "=== [$(date +"%Y-%m-%d %H:%M:%S")] Container destruction" >> "$LUNT_LOG_FILE"
+  lxc-destroy -n "$LUNT_NAME" >> "$LUNT_LOG_FILE" 2>&1
+}
+
+fail() {
+  echo "@PACKAGE@: $1"
+  exit 1
+}
+
+get_free_id() {
+  local FREE_ID=100000
+  local LINE; while read LINE; do
+    local ID_START=$(echo $LINE | cut -d ':' -f 2)
+    local ID_NUMBER=$(echo $LINE | cut -d ':' -f 3)
+    local ID_END=$((ID_START+ID_NUMBER-1))
+    if [ $ID_END -gt $FREE_ID ]; then
+      FREE_ID=$((ID_END+1))
+    fi
+  done < $1
+  echo "$FREE_ID"
+}
+
+get_free_ip4() {
+  local I; for I in `seq 0 3`; do
+    local IP[$I]=$(echo "$IP4_RANGE" | cut -d '.' -f "$((I+1))")
+    local IP_START[$I]=$(echo ${IP[$I]} | cut -d '-' -f 1)
+    local IP_END[$I]=$(echo ${IP[$I]} | cut -d '-' -f 2)
+    local IP_CUR[$I]=${IP_START[$I]}
+  done
+
+  local GET_IP=0
+  local OUT_OF_RANGE=0
+  while [ $GET_IP -eq 0 ] && [ $OUT_OF_RANGE -eq 0 ]; do
+    local IP_CUR_STR="${IP_CUR[0]}.${IP_CUR[1]}.${IP_CUR[2]}.${IP_CUR[3]}"
+    [ "$(is_free_ip4 $IP_CUR_STR)" = "Y" ] && GET_IP=1 && break
+
+    IP_CUR[3]=$((IP_CUR[3]+1))
+    for I in `seq 3 -1 0`; do
+      if [ ${IP_CUR[$I]} -gt ${IP_END[$I]} ]; then
+        [ $I -eq 0 ] && OUT_OF_RANGE=1 && break
+        IP_CUR[$I]=${IP_START[$I]}
+        IP_CUR[$((I-1))]=$((IP_CUR[$((I-1))]+1))
+      fi
+    done
+  done
+
+  [ $GET_IP -ne 0 ] && echo "$IP_CUR_STR"
+}
+
+is_free_ip4() {
+  local IP4=$1
+  local FOUND=0
+  local LUNT; for LUNT in `ls "$LOND"`; do
+    local LXC_CONFIG="$LOND/$LUNT/lxc.config"
+    [ ! -e "$LXC_CONFIG" ] && continue
+    local IP4_LUNT=$(grep "lxc\.network\.ipv4\ =\ " $LXC_CONFIG | cut -d ' ' -f 3 | cut -d '/' -f 1)
+    [ "$IP4" = "$IP4_LUNT" ] && FOUND=1 && break
+  done
+  [ $FOUND -eq 0 ] && echo "Y" || echo "N"
+}
+
+print_help() {
+  usage
+  echo ""
+  echo "  create LUNT     create a new lunt based on an existing configuration"
+  echo "  config LUNT     create a new configuration for a lunt"
+  echo "  destroy LUNT    destroy a lunt and its configuration"
+  echo "  help            display this message and exit"
+  echo "  show [ LUNT ]   show the current configurations of the lunts"
+}
+
+print_version() {
+  cat << EOF
+@PACKAGE@ @VERSION@
+Copyright (C) 2015 Xavier Gendre
+This program comes with ABSOLUTELY NO WARRANTY.
+This is free software, and you are welcome to redistribute it
+under certain conditions.
+EOF
+}
+
+show_lunt() {
+  if [ -z "$LUNT_NAME" ]; then
+    local COUNT=0
+    local LUNT; for LUNT in `ls "$LOND"`; do
+      echo "# $LUNT"
+      COUNT=$((COUNT+1))
+      show_lunt_config "$LOND/$LUNT/lxc.config"
+      echo ""
+    done
+    case "$COUNT" in
+      0) echo "No lunt in the lond";;
+      1) echo "There is 1 lunt in the lond";;
+      *) echo "There are $COUNT lunts in the lond";;
+    esac
+  else
+    echo "# $LUNT_NAME"
+    show_lunt_config "$LUNT_LXC_CONFIG"
+  fi
+}
+
+show_lunt_config() {
+  local LXC_CONFIG=$1
+  if [ -e "$LXC_CONFIG" ]; then
+    local SUBUID_START=$(grep "lxc\.id_map\ =\ u" $LXC_CONFIG | cut -d ' ' -f 5)
+    local SUBUID_NUMBER=$(grep "lxc\.id_map\ =\ u" $LXC_CONFIG | cut -d ' ' -f 6)
+    local SUBUID_END=$((SUBUID_START+SUBUID_NUMBER-1))
+    echo "UID range ..... $SUBUID_START-$SUBUID_END ($SUBUID_NUMBER)"
+
+    local SUBGID_START=$(grep "lxc\.id_map\ =\ g" $LXC_CONFIG | cut -d ' ' -f 5)
+    local SUBGID_NUMBER=$(grep "lxc\.id_map\ =\ g" $LXC_CONFIG | cut -d ' ' -f 6)
+    local SUBGID_END=$((SUBGID_START+SUBGID_NUMBER-1))
+    echo "GID range ..... $SUBGID_START-$SUBGID_END ($SUBGID_NUMBER)"
+
+    local IP4=$(grep "lxc\.network\.ipv4\ =\ " $LXC_CONFIG | cut -d ' ' -f 3 | cut -d '/' -f 1)
+    echo "IPv4 .......... $IP4"
+
+    local IP6_LOCAL=$(grep "lxc\.network\.ipv6\ =\ $IP6_LOCAL_PREFIX" $LXC_CONFIG | cut -d ' ' -f 3 | cut -d '/' -f 1)
+    echo "IPv6 local .... $IP6_LOCAL"
+
+    local IP6_GLOBAL=$(grep "lxc\.network\.ipv6\ =\ $IP6_GLOBAL_PREFIX" $LXC_CONFIG | cut -d ' ' -f 3 | cut -d '/' -f 1)
+    echo "IPv6 global ... $IP6_GLOBAL"
+  else
+    echo "No configuration file"
+  fi
+}
+
+usage() {
+  echo "Usage: @PACKAGE@ ACTION [ ARGS ]"
+  echo "  ACTION := { create | config | destroy | help | show }"
+}
+
+yesno() {
+  local ANSWER=""
+  while [ "$ANSWER" != "Y" ] && [ "$ANSWER" != "N" ]; do
+    read -p "$1 ? [Y/n] " ANSWER
+    [ -z "$ANSWER" ] && ANSWER="Y"
+    ANSWER="$(echo "$ANSWER" | sed 's/./\u&/')"
+  done
+  echo "$ANSWER"
+}
+
+CIRDAN_CONF="@sysconfdir@/@PACKAGE@/cirdan.conf"
+if [ -f "$CIRDAN_CONF" ]; then
+  . "$CIRDAN_CONF"
+else
+  fail "no configuration file for @PACKAGE@"
+fi
+
+if [ -z "$1" ]; then
+  usage
+  exit 1
+fi
+
+LOND="@localstatedir@/lib/@PACKAGE@"
+LOG_DIR="@localstatedir@/log/@PACKAGE@"
+
+mkdir -p "$LOND"
+mkdir -p "$LOG_DIR"
+
+case "$1" in
+  config)
+    [ -z "$2" ] && fail "no lunt name"
+    LUNT_NAME="$2"
+    LUNT_CONF="$LOND/$LUNT_NAME/$LUNT_NAME.conf"
+    LUNT_LXC_CONFIG="$LOND/$LUNT_NAME/lxc.config"
+    LUNT_LOG_FILE="$LOG_DIR/$LUNT_NAME.log"
+    create_config
+    ;;
+  create)
+    [ -z "$2" ] && fail "no lunt name"
+    LUNT_NAME="$2"
+    LUNT_CONF="$LOND/$LUNT_NAME/$LUNT_NAME.conf"
+    LUNT_LXC_CONFIG="$LOND/$LUNT_NAME/lxc.config"
+    LUNT_LOG_FILE="$LOG_DIR/$LUNT_NAME.log"
+    create_lunt
+    ;;
+  destroy)
+    [ -z "$2" ] && fail "no lunt name"
+    LUNT_NAME="$2"
+    LUNT_LXC_CONFIG="$LOND/$LUNT_NAME/lxc.config"
+    LUNT_LOG_FILE="$LOG_DIR/$LUNT_NAME.log"
+    destroy_lunt
+    ;;
+  help)
+    print_help
+    ;;
+  show)
+    LUNT_NAME="$2"
+    [ ! -z "$LUNT_NAME" ] && LUNT_LXC_CONFIG="$LOND/$LUNT_NAME/lxc.config"
+    show_lunt
+    ;;
+  version)
+    print_version
+    ;;
+  *)
+    fail "$1 is not a valid action"
+    ;;
+esac
+
+exit 0

@@ -70,8 +70,11 @@ net.ipv6.conf.eth0.accept_ra=0
 EOF
 
   # Hook script
-  local SED_SCRIPT="s%[@]cirdan_logfile[@]%$LUNT_LOG_FILE%g"
-  sed -e $SED_SCRIPT < "@sysconfdir@/@PACKAGE@/hook.template" > "$LOND/$LUNT_NAME/hook.sh"
+  local SED_SCRIPT_INTERFACE="s%[@]lond_interface[@]%$INTERFACE%g"
+  local SED_SCRIPT_LOG_FILE="s%[@]lunt_logfile[@]%$LUNT_LOG_FILE%g"
+  local SED_SCRIPT_GLOBAL_IP6="s%[@]lunt_global_ip6[@]%$IP6_GLOBAL_PREFIX:$IP6_NEW_SUFFIX%g"
+  local SED_SCRIPT_LOCAL_IP6="s%[@]lunt_local_ip6[@]%$IP6_LOCAL_PREFIX:$IP6_NEW_SUFFIX%g"
+  sed -e $SED_SCRIPT_INTERFACE -e $SED_SCRIPT_LOG_FILE -e $SED_SCRIPT_GLOBAL_IP6 -e $SED_SCRIPT_LOCAL_IP6 < "@sysconfdir@/@PACKAGE@/hook.template" > "$LOND/$LUNT_NAME/hook.sh"
   chmod 755 "$LOND/$LUNT_NAME/hook.sh"
 
   # Lunt configuration file

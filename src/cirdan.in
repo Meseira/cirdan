@@ -323,6 +323,7 @@ upgrade_lunt() {
       else
         echo "Lunt '$LUNT' is not running"
       fi
+      echo ""
       echo -e "\e[31m<<< Lunt '$LUNT'\e[0m\n"
     done
   else
@@ -333,6 +334,7 @@ upgrade_lunt() {
     else
       echo "Lunt '$LUNT_NAME' is not running"
     fi
+    echo ""
     echo -e "\e[31m<<< Lunt '$LUNT_NAME'\e[0m\n"
   fi
 }

@@ -248,11 +248,13 @@ is_free_ip4() {
 print_help() {
   usage
   echo ""
-  echo "  create LUNT     create a new lunt based on an existing configuration"
-  echo "  config LUNT     create a new configuration for a lunt"
-  echo "  destroy LUNT    destroy a lunt and its configuration"
-  echo "  help            display this message and exit"
-  echo "  show [ LUNT ]   show the current configurations of the lunts"
+  echo "  create LUNT        create a new lunt based on an existing configuration"
+  echo "  config LUNT        create a new configuration for a lunt"
+  echo "  destroy LUNT       destroy a lunt and its configuration"
+  echo "  help               display this message and exit"
+  echo "  show [ LUNT ]      show the current configurations of the lunts"
+  echo "  upgrade [ LUNT ]   upgrade the packages of the running lunts"
+  echo "  version            print the version and exit"
 }
 
 print_version() {
@@ -311,9 +313,33 @@ show_lunt_config() {
   fi
 }
 
+upgrade_lunt() {
+  if [ -z "$LUNT_NAME" ]; then
+    local LUNT; for LUNT in `ls "$LOND"`; do
+      echo -e "\e[31m>>> Lunt '$LUNT'\e[0m\n"
+      if [ ! -z "$(lxc-info -s -n $LUNT 2>&1 | grep RUNNING)" ]; then
+        lxc-attach -n "$LUNT" -- apt-get update
+        lxc-attach -n "$LUNT" -- apt-get upgrade -y
+      else
+        echo "Lunt '$LUNT' is not running"
+      fi
+      echo -e "\e[31m<<< Lunt '$LUNT'\e[0m\n"
+    done
+  else
+    echo -e "\e[31m>>> Lunt '$LUNT_NAME'\e[0m\n"
+    if [ ! -z "$(lxc-info -s -n $LUNT_NAME 2>&1 | grep RUNNING)" ]; then
+      lxc-attach -n "$LUNT_NAME" -- apt-get update
+      lxc-attach -n "$LUNT_NAME" -- apt-get upgrade -y
+    else
+      echo "Lunt '$LUNT_NAME' is not running"
+    fi
+    echo -e "\e[31m<<< Lunt '$LUNT_NAME'\e[0m\n"
+  fi
+}
+
 usage() {
   echo "Usage: @PACKAGE@ ACTION [ ARGS ]"
-  echo "  ACTION := { create | config | destroy | help | show }"
+  echo "  ACTION := { create | config | destroy | help | show | upgrade | version }"
 }
 
 yesno() {
@@ -345,14 +371,6 @@ mkdir -p "$LOND"
 mkdir -p "$LOG_DIR"
 
 case "$1" in
-  config)
-    [ -z "$2" ] && fail "no lunt name"
-    LUNT_NAME="$2"
-    LUNT_CONF="$LOND/$LUNT_NAME/$LUNT_NAME.conf"
-    LUNT_LXC_CONFIG="$LOND/$LUNT_NAME/lxc.config"
-    LUNT_LOG_FILE="$LOG_DIR/$LUNT_NAME.log"
-    create_config
-    ;;
   create)
     [ -z "$2" ] && fail "no lunt name"
     LUNT_NAME="$2"
@@ -360,6 +378,14 @@ case "$1" in
     LUNT_LXC_CONFIG="$LOND/$LUNT_NAME/lxc.config"
     LUNT_LOG_FILE="$LOG_DIR/$LUNT_NAME.log"
     create_lunt
+    ;;
+  config)
+    [ -z "$2" ] && fail "no lunt name"
+    LUNT_NAME="$2"
+    LUNT_CONF="$LOND/$LUNT_NAME/$LUNT_NAME.conf"
+    LUNT_LXC_CONFIG="$LOND/$LUNT_NAME/lxc.config"
+    LUNT_LOG_FILE="$LOG_DIR/$LUNT_NAME.log"
+    create_config
     ;;
   destroy)
     [ -z "$2" ] && fail "no lunt name"
@@ -375,6 +401,10 @@ case "$1" in
     LUNT_NAME="$2"
     [ ! -z "$LUNT_NAME" ] && LUNT_LXC_CONFIG="$LOND/$LUNT_NAME/lxc.config"
     show_lunt
+    ;;
+  upgrade)
+    LUNT_NAME="$2"
+    upgrade_lunt
     ;;
   version)
     print_version

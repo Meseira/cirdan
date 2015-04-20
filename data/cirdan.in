@@ -4,7 +4,7 @@ _cirdan() {
 
   cur="${COMP_WORDS[COMP_CWORD]}"
   prev="${COMP_WORDS[COMP_CWORD-1]}"
-  opts="config create destroy help show version"
+  opts="config create destroy help show upgrade version"
 
   COMPREPLY=()
 
@@ -33,6 +33,11 @@ _cirdan() {
       return 0
       ;;
     show)
+      local active_lunts=$(ls "@localstatedir@/lib/@PACKAGE@")
+      COMPREPLY=($(compgen -W "${active_lunts}" -- ${cur}))
+      return 0
+      ;;
+    upgrade)
       local active_lunts=$(ls "@localstatedir@/lib/@PACKAGE@")
       COMPREPLY=($(compgen -W "${active_lunts}" -- ${cur}))
       return 0

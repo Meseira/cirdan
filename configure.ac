@@ -1,4 +1,4 @@
-AC_INIT([cirdan], [0.1], [gendre.reivax@gmail.com])
+AC_INIT([cirdan], [0.1.3], [gendre.reivax@gmail.com])
 
 AC_CONFIG_MACRO_DIRS([m4])
 

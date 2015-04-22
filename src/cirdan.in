@@ -47,6 +47,15 @@ create_config() {
     echo "nameserver $NS" >> "$LOND/$LUNT_NAME/mount/etc/resolv.conf"
   done
 
+  mkdir -p "$LOND/$LUNT_NAME/mount/etc/network"
+  cat > "$LOND/$LUNT_NAME/mount/etc/network/interfaces" << EOF
+auto lo
+iface lo inet loopback
+
+auto eth0
+iface eth0 inet manual
+EOF
+
   mkdir -p "$LOND/$LUNT_NAME/mount/etc/apt"
   cat > "$LOND/$LUNT_NAME/mount/etc/apt/sources.list" << EOF
 deb $DEBIAN_MIRROR wheezy main
@@ -104,6 +113,7 @@ lxc.network.ipv6.gateway = $IP6_GATEWAY
 
 # Mount entries
 lxc.mount.entry = $LOND/$LUNT_NAME/mount/etc/resolv.conf etc/resolv.conf none bind,create=file 0 0
+lxc.mount.entry = $LOND/$LUNT_NAME/mount/etc/network/interfaces etc/network/interfaces none bind,create=file 0 0
 lxc.mount.entry = $LOND/$LUNT_NAME/mount/etc/apt/sources.list etc/apt/sources.list none bind,create=file 0 0
 lxc.mount.entry = $LOND/$LUNT_NAME/mount/etc/sysctl.d/local-ipv6.conf etc/sysctl.d/local-ipv6.conf none bind,create=file 0 0
 

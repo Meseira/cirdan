@@ -1,14 +1,19 @@
-.*.swp
+# Aclocal files
+/autom4te.cache/
+/aclocal.m4
 
-aclocal.m4
-autom4te.cache
-config.log
-config.status
-configure
-install-sh
-Makefile
+# Autoconf files
+/configure
+
+# Automake files
+/install-sh
+/missing
 Makefile.in
-missing
 
-data/cirdan
-src/cirdan
+# Configure files
+/config.log
+/config.status
+Makefile
+
+# Vim swap files
+.*.swp

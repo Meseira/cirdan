@@ -1,9 +1,9 @@
-2015-04-19 Xavier Gendre <gendre.reivax@gmail.com>
-
-  * Tag v0.1
-  * Initial release
-
 2015-04-20 Xavier Gendre <gendre.reivax@gmail.com>
 
   * Tag v0.1.2
   * More network variables in the hook template
+
+2015-04-19 Xavier Gendre <gendre.reivax@gmail.com>
+
+  * Tag v0.1
+  * Initial release

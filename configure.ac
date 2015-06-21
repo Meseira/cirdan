@@ -34,11 +34,11 @@ AC_CONFIG_FILES([
   Makefile
   src/Makefile
   src/python/Makefile
-  src/python/cirdan/Makefile
 ])
 
 # Files requiring some variable expansion
 AC_CONFIG_FILES([
+  src/python/setup.py
   src/python/cirdan/__init__.py
 ])
 

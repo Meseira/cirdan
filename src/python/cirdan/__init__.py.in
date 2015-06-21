@@ -15,6 +15,4 @@
 
 """Initialize package cirdan."""
 
-__author__ = 'Xavier Gendre <gendre.reivax@gmail.com>'
-__license__ = 'GPLv3'
-__version__ = '@CIRDAN_VERSION@'
+version = '@CIRDAN_VERSION@'

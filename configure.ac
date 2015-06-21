@@ -26,6 +26,9 @@ AM_INIT_AUTOMAKE
 AC_PROG_GREP
 AC_PROG_SED
 
+# Check for Python3 interpreter
+AM_PATH_PYTHON([3.2], [], [AC_MSG_ERROR([cannot find python3 >= 3.2])])
+
 # Files requiring some variable expansion
 AC_CONFIG_FILES([
   Makefile

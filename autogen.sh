@@ -1,9 +1,5 @@
 #!/bin/sh
-#
-# Cirdan: create and manage LXC unprivileged containers
-#
-# Copyright (C) Xavier Gendre 2015
-#
+
 # This file is part of Cirdan.
 #
 # Cirdan is free software: you can redistribute it and/or modify

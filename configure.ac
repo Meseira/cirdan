@@ -19,6 +19,7 @@ AC_SUBST([CIRDAN_VERSION_MAJOR], [cirdan_version_major])
 AC_SUBST([CIRDAN_VERSION_MINOR], [cirdan_version_minor])
 AC_SUBST([CIRDAN_VERSION_MICRO], [cirdan_version_micro])
 
+AC_CONFIG_MACRO_DIRS([m4])
 AC_CONFIG_SRCDIR([configure.ac])
 AM_INIT_AUTOMAKE
 
@@ -26,12 +27,14 @@ AM_INIT_AUTOMAKE
 AC_PROG_GREP
 AC_PROG_SED
 
-# Check for Python3 interpreter
+# Check for Python3 interpreter and modules
 AM_PATH_PYTHON([3.2], [], [AC_MSG_ERROR([cannot find python3 >= 3.2])])
+AX_PYTHON_MODULE([setuptools], [yes], [python3])
 
 # Makefiles
 AC_CONFIG_FILES([
   Makefile
+  m4/Makefile
   src/Makefile
   src/python/Makefile
 ])

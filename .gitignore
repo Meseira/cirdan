@@ -1,3 +1,6 @@
+# Vim swap files
+.*.swp
+
 # Aclocal files
 /autom4te.cache/
 /aclocal.m4
@@ -15,5 +18,9 @@ Makefile.in
 /config.status
 Makefile
 
-# Vim swap files
-.*.swp
+# Setuptools files
+/src/python/build/
+
+# Files with expanded variables
+/src/python/setup.py
+/src/python/cirdan/__init__.py

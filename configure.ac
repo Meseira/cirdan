@@ -48,6 +48,7 @@ case $distro in
     AC_MSG_ERROR([host distribution is not yet supported])
     ;;
 esac
+AM_CONDITIONAL([DISTRO_DEBIAN], [test "x$distro" = "xdebian"])
 
 # Makefiles
 AC_CONFIG_FILES([

@@ -31,6 +31,24 @@ AC_PROG_SED
 AM_PATH_PYTHON([3.2], [], [AC_MSG_ERROR([cannot find python3 >= 3.2])])
 AX_PYTHON_MODULE([setuptools], [yes], [python3])
 
+# Check for lsb_release
+AC_CHECK_PROG([have_lsb_release], [lsb_release], [yes], [no])
+if test "x$have_lsb_release" != "xyes"; then
+  AC_MSG_ERROR([cannot find lsb_release])
+fi
+
+# Detect the distribution to deal with distro specific options
+AC_MSG_CHECKING([host distribution])
+distro=`lsb_release -is | tr '[[:upper:]]' '[[:lower:]]'`
+AC_MSG_RESULT([$distro])
+case $distro in
+  debian)
+    ;;
+  *)
+    AC_MSG_ERROR([host distribution is not yet supported])
+    ;;
+esac
+
 # Makefiles
 AC_CONFIG_FILES([
   Makefile

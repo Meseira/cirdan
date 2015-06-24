@@ -18,6 +18,9 @@ Makefile.in
 /config.status
 Makefile
 
+# Python compilation
+/**/__pycache__/
+
 # Setuptools files
 /src/python/build/
 /src/python/cirdan.egg-info/

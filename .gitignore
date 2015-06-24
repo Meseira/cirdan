@@ -20,6 +20,8 @@ Makefile
 
 # Setuptools files
 /src/python/build/
+/src/python/cirdan.egg-info/
+/src/python/dist/
 
 # Files with expanded variables
 /src/python/setup.py

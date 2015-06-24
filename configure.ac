@@ -45,10 +45,19 @@ case $distro in
   debian)
     ;;
   *)
-    AC_MSG_ERROR([host distribution is not yet supported])
+    AC_MSG_ERROR([your host distribution is not yet supported])
     ;;
 esac
 AM_CONDITIONAL([DISTRO_DEBIAN], [test "x$distro" = "xdebian"])
+
+# Python package 'cirdan' path
+AM_COND_IF([DISTRO_DEBIAN],
+  [pythondir_base=`echo $pythondir | sed s/site-packages/dist-packages/`],
+  [pythondir_base=`echo $pythondir`]
+)
+egg_name=`echo $CIRDAN_VERSION | tr - _`-py`echo $PYTHON_VERSION`.egg
+cirdan_pkgpython_path=$pythondir_base/cirdan-$egg_name
+AC_SUBST([CIRDAN_PKGPYTHON_PATH], [$cirdan_pkgpython_path])
 
 # Makefiles
 AC_CONFIG_FILES([

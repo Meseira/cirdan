@@ -29,6 +29,7 @@ AC_PROG_SED
 
 # Check for Python3 interpreter and modules
 AM_PATH_PYTHON([3.2], [], [AC_MSG_ERROR([cannot find python3 >= 3.2])])
+AX_PYTHON_MODULE([lxc], [yes], [python3])
 AX_PYTHON_MODULE([setuptools], [yes], [python3])
 
 # Check for lsb_release

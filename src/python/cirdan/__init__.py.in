@@ -16,3 +16,5 @@
 """Initialize package cirdan."""
 
 version = '@CIRDAN_VERSION@'
+
+from cirdan.lond import Lond

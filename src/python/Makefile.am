@@ -12,4 +12,5 @@ uninstall:
 	test -d "$(CIRDAN_PKGPYTHON_PATH)" && rm -rf "$(CIRDAN_PKGPYTHON_PATH)"
 
 EXTRA_DIST = \
-  cirdan/entry_points.py
+  cirdan/entry_points.py \
+  cirdan/lond.py

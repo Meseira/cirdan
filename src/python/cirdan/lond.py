@@ -15,21 +15,24 @@
 
 """Lond class definition."""
 
+import lxc
+import os.path
 import re
 
 class Lond(object):
     """
-    Lond(name) -> Lond object
+    Lond(name, lxc_path) -> Lond object
     """
 
     # Constructor
     #############
 
-    def __init__(self, name):
+    def __init__(self, name, lxc_path):
         """
         Constructor method.
         The name of the lond is treated as an ASCII string and has to match the
-        pattern '^[a-zA-Z]\w*$'.
+        pattern '^[a-zA-Z]\w*$'. Argument 'lxc_path' refers to the directory
+        where LXC containers are stored.
         """
 
         # Name of the lond
@@ -37,10 +40,14 @@ class Lond(object):
             self.__name = str(name)
         else:
             raise ValueError(
-                    "name '{}' does not match '^[a-zA-Z]\w*$'".format(
-                        str(name)
-                        )
+                    "name '{}' does not match '^[a-zA-Z]\w*$'".format(name)
                     )
+
+        if not os.path.isdir(lxc_path):
+            raise ValueError("path '{}' does not exist".format(lxc_path))
+
+        # LXC container
+        self.__lxc_container = lxc.Container(self.__name, str(lxc_path))
 
     # Properties
     ############

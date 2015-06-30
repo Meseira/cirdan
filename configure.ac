@@ -62,6 +62,8 @@ AC_SUBST([CIRDAN_PKGPYTHON_PATH], [$cirdan_pkgpython_path])
 # Makefiles
 AC_CONFIG_FILES([
   Makefile
+  conf/Makefile
+  conf/sysctl/Makefile
   m4/Makefile
   src/Makefile
   src/python/Makefile

@@ -18,6 +18,9 @@
 import lxc
 import os.path
 import re
+import tempfile
+
+from cirdan.cirdan_error import CirdanError
 
 class Lond(object):
     """
@@ -59,6 +62,39 @@ class Lond(object):
 
     # Public methods
     ################
+
+    def create(self):
+        """
+        Create the lond or raise an exception if it has already been created.
+        """
+
+        if self.__lxc_container.defined:
+            raise CirdanError("'{}' already exists".format(self.__name))
+
+        if self.__user_id_first is None or self.__user_id_count is None:
+            raise CirdanError("no subordinate user id range")
+
+        if self.__group_id_first is None or self.__group_id_count is None:
+            raise CirdanError("no subordinate group id range")
+
+        # Set the configuration for LXC container
+        with tempfile.NamedTemporaryFile() as f:
+            f.write('lxc.network.type = empty\n'.encode())
+            f.write('lxc.id_map = u 0 {} {}\n'.format(
+                self.__user_id_first,
+                self.__user_id_count).encode()
+                )
+            f.write('lxc.id_map = g 0 {} {}\n'.format(
+                self.__group_id_first,
+                self.__group_id_count).encode()
+                )
+            f.seek(0)
+
+            if not self.__lxc_container.load_config(f.name):
+                raise CirdanError('cannot load configuration')
+
+        # Create LXC container
+        self.__lxc_container.create('download')
 
     def set_group_id_range(self, first, count):
         """

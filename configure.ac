@@ -71,6 +71,7 @@ AC_CONFIG_FILES([
   m4/Makefile
   src/Makefile
   src/python/Makefile
+  src/scripts/Makefile
 ])
 
 AC_OUTPUT

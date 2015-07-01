@@ -73,10 +73,4 @@ AC_CONFIG_FILES([
   src/python/Makefile
 ])
 
-# Files requiring some variable expansion
-AC_CONFIG_FILES([
-  src/python/setup.py
-  src/python/cirdan/__init__.py
-])
-
 AC_OUTPUT

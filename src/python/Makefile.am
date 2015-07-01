@@ -13,5 +13,4 @@ uninstall:
 
 EXTRA_DIST = \
   cirdan/entry_points.py \
-  cirdan/id_map.py \
   cirdan/lond.py

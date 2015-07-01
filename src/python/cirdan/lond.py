@@ -49,6 +49,85 @@ class Lond(object):
         # LXC container
         self.__lxc_container = lxc.Container(self.__name, str(lxc_path))
 
+        # Subordinate user id range
+        self.__user_id_first = None
+        self.__user_id_count = None
+
+        # Subordinate group id range
+        self.__group_id_first = None
+        self.__group_id_count = None
+
+    # Public methods
+    ################
+
+    def set_group_id_range(self, first, count):
+        """
+        Give a range of 'count' subordinate group ids starting at id 'first' to
+        the lond. The ownership of the subordinate ids is not checked, thus be
+        sure to use a range that belongs to an appropriate group. While the lond
+        remains uncreated, the range is stored but not mapped. If the lond has
+        already been created, setting an new range is useless.
+        """
+
+        if not isinstance(first, int):
+            raise TypeError("'first' must be an integer, not {}".format(
+                        first.__class__.__name__
+                        )
+                    )
+
+        if first < 0:
+            raise ValueError(
+                    "'first' must be a non negative integer: {}".format(first)
+                    )
+
+        if not isinstance(count, int):
+            raise TypeError("'count' must be an integer, not {}".format(
+                        count.__class__.__name__
+                        )
+                    )
+
+        if count < 1:
+            raise ValueError(
+                    "'count' must be a positive integer: {}".format(count)
+                    )
+
+        self.__group_id_first = first
+        self.__group_id_count = count
+
+    def set_user_id_range(self, first, count):
+        """
+        Give a range of 'count' subordinate user ids starting at id 'first' to
+        the lond. The ownership of the subordinate ids is not checked, thus be
+        sure to use a range that belongs to an appropriate user. While the lond
+        remains uncreated, the range is stored but not mapped. If the lond has
+        already been created, setting an new range is useless.
+        """
+
+        if not isinstance(first, int):
+            raise TypeError("'first' must be an integer, not {}".format(
+                        first.__class__.__name__
+                        )
+                    )
+
+        if first < 0:
+            raise ValueError(
+                    "'first' must be a non negative integer: {}".format(first)
+                    )
+
+        if not isinstance(count, int):
+            raise TypeError("'count' must be an integer, not {}".format(
+                        count.__class__.__name__
+                        )
+                    )
+
+        if count < 1:
+            raise ValueError(
+                    "'count' must be a positive integer: {}".format(count)
+                    )
+
+        self.__user_id_first = first
+        self.__user_id_count = count
+
     # Properties
     ############
 

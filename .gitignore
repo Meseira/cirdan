@@ -27,5 +27,6 @@ Makefile
 /src/python/dist/
 
 # Files with expanded variables
+/conf/cirdan
 /src/python/setup.py
 /src/python/cirdan/__init__.py

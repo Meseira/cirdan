@@ -1,0 +1,5 @@
+[Cirdan]
+# Cirdan user (owner of the londs)
+user = @CIRDAN_USER@
+# Cirdan state path
+path = @localstatedir@/lib/cirdan

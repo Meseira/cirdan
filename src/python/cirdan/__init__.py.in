@@ -17,4 +17,5 @@
 
 version = '@CIRDAN_VERSION@'
 
+from cirdan.id_map import IdMap
 from cirdan.lond import Lond

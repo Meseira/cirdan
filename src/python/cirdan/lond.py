@@ -94,7 +94,15 @@ class Lond(object):
                 raise CirdanError('cannot load configuration')
 
         # Create LXC container
-        self.__lxc_container.create('download')
+        self.__lxc_container.create('download',
+                args={
+                    'server': 'www.meseira.fr',
+                    'no-validate': '',
+                    'dist': 'debian',
+                    'release': 'jessie',
+                    'arch': 'amd64'
+                    }
+                )
 
     def set_group_id_range(self, first, count):
         """

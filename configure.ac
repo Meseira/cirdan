@@ -12,6 +12,9 @@ m4_define([cirdan_version], [ifelse(cirdan_version_beta, [], [cirdan_version_bas
 AC_INIT([cirdan], [cirdan_version], [gendre.reivax@gmail.com])
 
 # Create output variables
+AC_SUBST([CIRDAN_USER], [cirdan])
+AC_SUBST([CIRDAN_GROUP], [cirdan])
+
 AC_SUBST([CIRDAN_VERSION], [cirdan_version])
 AC_SUBST([CIRDAN_VERSION_BASE], [cirdan_version_base])
 AC_SUBST([CIRDAN_VERSION_BETA], [cirdan_version_beta])

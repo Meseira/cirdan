@@ -15,18 +15,53 @@
 # You should have received a copy of the GNU General Public License
 # along with Cirdan. If not, see <http://www.gnu.org/licenses/>.
 
+import argparse
+import os
+import pwd
 import sys
 
 import cirdan
 
 if __name__ == '__main__':
-    print("cirdan v{}\n".format(cirdan.version))
 
+    # Parse command line arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-v', '--version', action='version',
+            version='cirdan {}'.format(cirdan.version))
+    parser.add_argument('OBJECT', choices=['lond'])
+    parser.add_argument('COMMAND', choices=['create'])
+    args = parser.parse_args()
+
+    # Get Cirdan configuration
     try:
         with open('@sysconfdir@/cirdan') as f:
             config = cirdan.Config(f)
     except OSError as e:
         sys.exit("cirdan: {}: '{}'".format(e.strerror, e.filename))
 
-    print("Cirdan user: '{}'".format(config.cirdan_user))
-    print("Cirdan path: '{}'".format(config.cirdan_path))
+    if args.OBJECT == 'lond':
+        if args.COMMAND == 'create':
+            try:
+                cirdan_user_data = pwd.getpwnam(config.user)
+            except KeyError:
+                sys.exit("cirdan: cannot found user '{}'".format(config.user))
+
+            cirdan_user_id = cirdan_user_data[2]
+            cirdan_group_id = cirdan_user_data[3]
+
+            try:
+                os.setresgid(cirdan_group_id, cirdan_group_id, cirdan_group_id)
+                os.setresuid(cirdan_user_id, cirdan_user_id, cirdan_user_id)
+            except PermissionError:
+                sys.exit('cirdan: not allowed to change process id')
+
+            lond_name = input('Lond name: ')
+            lond_first_user_id = int(input('First user id: '))
+            lond_count_user_id = int(input('Count user id: '))
+            lond_first_group_id = int(input('First group id: '))
+            lond_count_group_id = int(input('Count group id: '))
+
+            lond = cirdan.Lond(lond_name, config.path)
+            lond.set_user_id_range(lond_first_user_id, lond_count_user_id)
+            lond.set_group_id_range(lond_first_group_id, lond_count_group_id)
+            lond.create()

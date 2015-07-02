@@ -49,12 +49,12 @@ class Config(object):
     # Properties
     ############
 
-    cirdan_user = property(
+    user = property(
             lambda self: self.__config['Cirdan']['user'],
             doc='Cirdan user'
             )
 
-    cirdan_path = property(
+    path = property(
             lambda self: self.__config['Cirdan']['path'],
             doc='Cirdan path'
             )

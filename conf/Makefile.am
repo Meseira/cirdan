@@ -1,9 +1,8 @@
 SUBDIRS = sysctl
 
-cirdanconf_DATA = cirdan
-cirdanconfdir = $(sysconfdir)
+sysconf_DATA = cirdan
 
-CLEANFILES = $(cirdanconf_DATA)
+CLEANFILES = $(sysconf_DATA)
 EXTRA_DIST = cirdan.in
 
 cirdan: cirdan.in Makefile

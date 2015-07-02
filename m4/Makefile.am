@@ -1,2 +1,1 @@
-EXTRA_DIST = \
-  ax_python_module.m4
+EXTRA_DIST = ax_python_module.m4

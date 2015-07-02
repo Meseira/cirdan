@@ -1,6 +1,6 @@
-sbin_SCRIPTS = cirdan
+bin_SCRIPTS = cirdan
 
-CLEANFILES = $(sbin_SCRIPTS)
+CLEANFILES = $(bin_SCRIPTS)
 EXTRA_DIST = cirdan.in
 
 cirdan: cirdan.in Makefile

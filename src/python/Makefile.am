@@ -1,3 +1,14 @@
+noinst_DATA = \
+  setup.py \
+  cirdan/__init__.py
+
+CLEANFILES = $(noinst_DATA)
+EXTRA_DIST = \
+  setup.py.in \
+  cirdan/__init__.py.in \
+  cirdan/cirdan_error.py \
+  cirdan/lond.py
+
 all:
 	$(PYTHON) setup.py build
 
@@ -9,16 +20,6 @@ install:
 
 uninstall:
 	test -d "$(CIRDAN_PKGPYTHON_PATH)" && rm -rf "$(CIRDAN_PKGPYTHON_PATH)"
-
-noinst_DATA = \
-  setup.py \
-  cirdan/__init__.py
-
-CLEANFILES = $(noinst_DATA)
-EXTRA_DIST = \
-  setup.py.in \
-  cirdan/__init__.py.in \
-  cirdan/lond.py
 
 do_substitution = $(SED) -e 's%[@]CIRDAN_VERSION[@]%$(CIRDAN_VERSION)%g'
 

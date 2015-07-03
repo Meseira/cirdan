@@ -7,6 +7,7 @@ EXTRA_DIST = \
   setup.py.in \
   cirdan/__init__.py.in \
   cirdan/cirdan_error.py \
+  cirdan/config.py \
   cirdan/lond.py
 
 all:

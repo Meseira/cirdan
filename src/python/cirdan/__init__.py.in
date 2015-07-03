@@ -17,4 +17,5 @@
 
 version = '@CIRDAN_VERSION@'
 
+from cirdan.config import Config
 from cirdan.lond import Lond

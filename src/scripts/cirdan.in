@@ -49,11 +49,15 @@ if __name__ == '__main__':
             cirdan_user_id = cirdan_user_data[2]
             cirdan_group_id = cirdan_user_data[3]
 
+            # Change real, effective and saved ids
             try:
                 os.setresgid(cirdan_group_id, cirdan_group_id, cirdan_group_id)
                 os.setresuid(cirdan_user_id, cirdan_user_id, cirdan_user_id)
             except PermissionError:
                 sys.exit('cirdan: not allowed to change process id')
+
+            # Set variable $HOME
+            os.environ['HOME'] = config.path
 
             lond_name = input('Lond name: ')
             lond_first_user_id = int(input('First user id: '))
